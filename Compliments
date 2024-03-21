@@ -1,0 +1,172 @@
+try:
+    import requests, random, time, sys, traceback
+    from bs4 import BeautifulSoup
+    from telethon import TelegramClient
+    from threading import Thread
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+
+    compliments = []  # тут будут все комплименты
+
+
+    def Compliment(i):
+        global compliments
+        url = 'http://kompli.me/komplimenty-devushke/page/' + str(i)  # пробегаемся по всем станицам
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')  # получаем код страницы
+        a = soup.select("a")  # получаем код определенного тега
+        for comp in a[3:][:25]:  # сортируем каждый комплимент на определенную длину и отсутствие рекламного текста
+            if comp.text.count(" ")\
+                    >= 2 and comp.text != "Как поддержать девушку, когда она заболела?" and 'губ' not in comp.text:
+                compliments.append(comp.text)
+
+
+    def Compliment1():
+        global compliments
+        url = 'https://love.romanticcollection.ru/blog/500-trogatelnyh-komplimentov-devushke/?ysclid=lu01gfssno817495887'  # пробегаемся по станице
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')  # получаем код страницы
+        a = soup.select("li")  # получаем код определенного тега
+        for comp in a[13:][:-11]:  # сортируем каждый комплимент на определенную длину и отсутствие рекламного текста
+            compliments.append(comp.text)
+
+
+    def Compliment2():
+        l = list("0123456789")
+        global compliments
+        url = 'https://mensby.com/women/relations/300-krasivyh-slov-devushke-luchshie-komplimenty-devushke'  # пробегаемся по всем станицам
+
+        # Создаем экземпляр драйвера Chrome
+        options = Options()
+        options.add_argument('--headless')  # Запуск браузера без отображения окна (headless режим)
+        driver = webdriver.Chrome(options=options)
+
+        driver.get(url)  # Получаем страницу с помощью Selenium
+
+        # Ждем несколько секунд для загрузки JavaScript и динамического контента
+        #time.sleep(4)
+
+        soup = BeautifulSoup(driver.page_source, 'html.parser')  # Получаем код страницы
+
+        a = soup.select("p")  # Получаем код определенного тега
+        for comp in a:  # Сортируем каждый комплимент на определенную длину и отсутствие рекламного текста
+            n = 0
+            for i in comp.text:
+                if i == " ":
+                    break
+                n += 1
+            try:
+               if comp.text[0] in l:
+                    compliments.append(comp.text[n:])
+            except IndexError:
+                return True
+
+        driver.quit()  # Закрываем браузер после получения данных
+
+
+    def Compliment3():
+        global compliments
+        url = 'https://pavelrakov.com/articles/idealnye-otnosheniya-po-lyubvi/podborka-krasivykh-i-trogatelnykh-komplimentov-dlya-devushki/'  # пробегаемся по всем станицам
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')  # получаем код страницы
+        a = soup.select("li")  # получаем код определенного тега
+        for comp in a:  # сортируем каждый комплимент на определенную длину и отсутствие рекламного текста
+            if comp.text.count(" ") >= 5:
+                compliments.append(comp.text)
+
+
+    async def message(api_id, api_hash, resipient, random_compliment):
+        client = TelegramClient('Senya_byy', api_id, api_hash)
+        await client.start()
+        receiver = await client.get_input_entity(resipient)
+        await client.send_message(receiver, random_compliment)
+        await client.disconnect()
+        print('ОТПРАВЛЕН КОМПЛИМЕНТ: ' + str(random_compliment))
+
+
+    print('---ПРОГРАММА_ЗАПУЩЕНА---')
+    defoultLen = 1
+    n = defoultLen
+
+    print('Сбор комплиментов:', end='\n')
+    jobs = []
+    start = time.time()
+    i = 1
+
+    while i <= n:
+        treads = Thread(target=Compliment(i))
+        treads.start()
+        jobs.append(treads)
+        i += 1
+    i = 1
+
+    while i == 1:
+        treads = Thread(target=Compliment2)
+        treads.start()
+        jobs.append(treads)
+        treads = Thread(target=Compliment1)
+        treads.start()
+        jobs.append(treads)
+        treads = Thread(target=Compliment3)
+        treads.start()
+        jobs.append(treads)
+        i += 1
+
+    for proc in jobs:
+        proc.join()
+
+    def filtration():
+        global compliments
+
+        for offer in compliments:
+            if offer.count(" ") < 5:
+                compliments.remove(offer)
+            if "губ" in offer or "секс" in offer:
+                compliments.remove(offer)
+
+    filtration()
+
+    print(f'Найдено {len(compliments)} комплимент(ов/а) за {float(time.time() - start)} cекунд(ы)')
+
+    api_id = 25376451 #секретно
+    api_hash = 'c0bfbde0b962987edb93ef3a681c6dd5' #секретно
+    phone_number = '+79010547554'
+    defoultResipient = '@Senya_byy'
+    client = TelegramClient('Senya_byy', api_id, api_hash)
+
+    resipient = input('Введите имя получателя: ')
+    if resipient == '':
+        resipient = defoultResipient
+        print('---Установленно_Значение_По_Умолчанию---\n')
+
+    print('\n---ПРОГРАММА_ГОТОВА_К_ОТПРАВКЕ_КОМПЛИМЕНТА---', end='\n')
+    print(f"Получатель -- {resipient} | для смены получателя введите:  'CHANGE' ")
+    print('\nОжидание нажатия кнопки...', end='\n')
+
+    while True:
+        random_compliment = random.choice(compliments)
+        go = input()
+        if go == "CHANGE" or go == 'change':
+            print("\n---СМЕНА_ПОЛУЧАТЕЛЯ---")
+            resipient = input('Введите имя получателя: ')
+            if resipient == '':
+                resipient = defoultResipient
+                print('---Установленно_Значение_По_Умолчанию---')
+                print('\n---ПРОГРАММА_ГОТОВА_К_ОТПРАВКЕ_КОМПЛИМЕНТА---', end='\n')
+                print(f"Получатель -- {resipient}| для смены получателя введите: - 'CHANGE' ")
+
+        elif go != '':
+            print('---Завершено пользователем [OK]---')
+            break
+        client.loop.run_until_complete(message(api_id, api_hash, resipient, random_compliment))
+
+
+except KeyboardInterrupt:
+    print('\nЗавершено пользователем [OK]')
+except ValueError:
+    print('Возникла ошибка при попытке отправить сообщение указанному адресату [ERROR]')
+except:
+    print('Произошла неизвестная ошибка [ERROR]')  # Сообщение об ошибке
+    print('\n=======ИНФОРМАЦИЯ ОБ ОШИБКЕ=========')  # Верхняя граница репорта об ошибке
+    traceback.print_exc(limit=2, file=sys.stdout)  # Подробный репорт об ошибке и ее причинах
+    print('========КОНЕЦ========')  # Конец репорта
