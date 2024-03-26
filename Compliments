@@ -128,11 +128,11 @@ try:
 
     print(f'Найдено {len(compliments)} комплимент(ов/а) за {float(time.time() - start)} cекунд(ы)')
 
-    api_id = 25376451 #секретно
-    api_hash = 'c0bfbde0b962987edb93ef3a681c6dd5' #секретно
-    phone_number = '+79010547554'
-    defoultResipient = '@Senya_byy'
-    client = TelegramClient('Senya_byy', api_id, api_hash)
+    api_id = "ваши данные" #секретно
+    api_hash = 'ваши данные' #секретно
+    phone_number = '+ваш номер'
+    defoultResipient = 'имя в тг'
+    client = TelegramClient('имя в тг', api_id, api_hash)
 
     resipient = input('Введите имя получателя: ')
     if resipient == '':
